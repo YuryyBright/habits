@@ -8,6 +8,7 @@ from datetime import date, timedelta
 from .theme import *
 from .widgets import *
 from db import queries as Q
+from config import WEEKDAYS_UK, MONTHS_UK_GEN
 
 
 class TodayTab(tk.Frame):
@@ -79,10 +80,7 @@ class TodayTab(tk.Frame):
         is_today = (d == date.today())
 
         # Date label
-        days = ["Понеділок","Вівторок","Середа","Четвер","П'ятниця","Субота","Неділя"]
-        months = ["Січня","Лютого","Березня","Квітня","Травня","Червня",
-                  "Липня","Серпня","Вересня","Жовтня","Листопада","Грудня"]
-        label = f"{days[d.weekday()]}, {d.day} {months[d.month-1]} {d.year}"
+        label = f"{WEEKDAYS_UK[d.weekday()]}, {d.day} {MONTHS_UK_GEN[d.month-1]} {d.year}"
         if is_today:
             label += "  •  Сьогодні"
         self._date_var.set(label)
@@ -186,15 +184,19 @@ class TodayTab(tk.Frame):
             is_done = current_val == 'done'
             is_fail = current_val == 'fail'
 
+            # Визначаємо кольори фону без прозорості
+            done_bg = "#e9f7ef" if is_done else SURFACE2
+            fail_bg = "#fff5f5" if is_fail else SURFACE2
+
             done_btn = tk.Label(parent, text="✔", cursor="hand2",
-                                bg=DONE + "22" if is_done else SURFACE2,
+                                bg=done_bg,
                                 fg=DONE if is_done else TEXT_DIM,
                                 font=("Segoe UI", 12), width=3, relief="flat")
             done_btn.pack(side="right", padx=2)
             done_btn.bind("<Button-1>", lambda e: _set(None if is_done else 'done'))
 
             fail_btn = tk.Label(parent, text="✖", cursor="hand2",
-                                bg=FAIL + "22" if is_fail else SURFACE2,
+                                bg=fail_bg,
                                 fg=FAIL if is_fail else TEXT_DIM,
                                 font=("Segoe UI", 12), width=3, relief="flat")
             fail_btn.pack(side="right", padx=2)
@@ -285,9 +287,13 @@ class TodayTab(tk.Frame):
 
             # Quick zero for negative habits
             if habit.get('is_negative'):
+                is_zero = current_val == '0' or current_val == 0
+                zero_bg = "#e9f7ef" if is_zero else SURFACE2 # Використовуємо той самий світло-зелений
+                
                 zero_btn = tk.Label(parent, text="0", cursor="hand2",
-                                    bg=DONE + "22" if current_val == '0' or current_val == 0 else SURFACE2,
-                                    fg=DONE, font=FONT_MONO, width=2)
+                                    bg=zero_bg,
+                                    fg=DONE if is_zero else TEXT_DIM,
+                                    font=FONT_MONO, width=2)
                 zero_btn.pack(side="right", padx=1)
                 zero_btn.bind("<Button-1>", lambda e: (_set(0), None)[1])
 

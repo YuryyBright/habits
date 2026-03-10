@@ -155,15 +155,20 @@ class IdealTab(tk.Frame):
         self._build_summary(criteria, scores)
 
     def _get_recent_scores(self, criterion_id, days=7):
-        conn = Q.get_connection()
         from datetime import timedelta
-        from_date = (date.today() - timedelta(days=days)).isoformat()
-        rows = conn.execute("""
-            SELECT score FROM ideal_scores
-            WHERE criterion_id=? AND score_date >= ?
-        """, (criterion_id, from_date)).fetchall()
-        conn.close()
-        return [r['score'] for r in rows]
+        from db.database import get_session
+        from db.models import IdealScore
+        from_date = date.today() - timedelta(days=days)
+        with get_session() as s:
+            rows = (
+                s.query(IdealScore.score)
+                .filter(
+                    IdealScore.criterion_id == criterion_id,
+                    IdealScore.score_date >= from_date,
+                )
+                .all()
+            )
+        return [r.score for r in rows]
 
     def _score_label(self, score):
         labels = {0: "0 — Нічого", 1: "1 — Слабко", 2: "2 — Нижче норми",

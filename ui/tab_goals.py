@@ -156,7 +156,7 @@ class GoalsTab(tk.Frame):
         if g['status'] != 'done':
             tk.Button(btn_f, text="✔ Виконано",
                       command=lambda g=g: (Q.update_goal(g['id'], status='done', progress=100), self.refresh()),
-                      bg=DONE + "22", fg=DONE, font=FONT_MONO,
+                      bg="#eafaf1", fg=DONE, font=FONT_MONO,
                       relief="flat", cursor="hand2").pack(side="left", padx=(0, 4))
 
         if g['status'] == 'active':

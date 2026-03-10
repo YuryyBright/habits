@@ -203,25 +203,38 @@ class MonthTab(tk.Frame):
 
     def _cell_display(self, val, habit, is_future, is_today, base_bg):
         """Returns (text, fg, bg) for a cell."""
+        # Визначаємо статичні пастельні кольори для світлої теми
+        PALE_COLORS = {
+            'done': "#e9f7ef",   # Блідо-зелений
+            'fail': "#fff5f5",   # Блідо-червоний
+            'accent': "#e7f5ff", # Блідо-блакитний
+            'num': "#f8f9fa"     # Світло-сірий (SURFACE)
+        }
+
         if is_future:
             return "·", BORDER, base_bg
         if val is None:
             return "·", TEXT_DIM, base_bg
+        
         if val == 'done':
-            return "✔", DONE, DONE + "22"
+            return "✔", DONE, PALE_COLORS['done']
         if val == 'fail':
-            return "✖", FAIL, FAIL + "22"
+            return "✖", FAIL, PALE_COLORS['fail']
+        
         try:
             n = float(val)
             if habit.get('is_negative'):
                 clr = DONE if n == 0 else (STREAK if n <= 5 else FAIL)
+                bg_clr = PALE_COLORS['done'] if n == 0 else PALE_COLORS['fail']
             else:
                 goal = habit.get('goal_value') or 1
                 clr = DONE if n >= goal else (ACCENT3 if n > 0 else FAIL)
+                bg_clr = PALE_COLORS['done'] if n >= goal else PALE_COLORS['fail']
+            
             display = str(int(n)) if n == int(n) else str(n)
-            return display[:3], clr, clr + "22"
+            return display[:3], clr, bg_clr
         except:
-            return str(val)[:3], ACCENT3, ACCENT3 + "22"
+            return str(val)[:3], ACCENT3, PALE_COLORS['accent']
 
     def _is_done(self, val, habit):
         if val == 'done':
@@ -299,38 +312,44 @@ class MonthTab(tk.Frame):
         for w in self._heatmap_cells_frame.winfo_children():
             w.destroy()
 
+        # Палітра інтенсивності для Heatmap (від слабкої до сильної)
+        # Використовуємо відтінки вашого ACCENT кольору
+        LEVELS = [
+            "#f8f9fa", # 0% - SURFACE
+            "#e7f5ff", # 20%
+            "#d0ebff", # 40%
+            "#a5d8ff", # 60%
+            "#74c0fc", # 80%
+            "#339af0"  # 100% (ACCENT)
+        ]
+
         cells = tk.Frame(self._heatmap_cells_frame, bg=SURFACE)
         cells.pack(fill="x")
 
         for d in range(1, days + 1):
             is_future = d > today_day > 0
+            pct = 0
+            
             if is_future:
                 bg = SURFACE2
             else:
                 done_cnt = sum(
                     1 for h in habits
                     if self._is_done(logs.get(h['id'], {}).get(d), h)
-                       and logs.get(h['id'], {}).get(d) is not None
+                    and logs.get(h['id'], {}).get(d) is not None
                 )
                 logged = sum(1 for h in habits if logs.get(h['id'], {}).get(d) is not None)
-                pct = done_cnt / logged if logged > 0 else 0
-                if pct == 0 and logged == 0:
-                    bg = SURFACE2
-                elif pct >= 1.0:
-                    bg = ACCENT
-                elif pct >= 0.8:
-                    bg = ACCENT + "cc"
-                elif pct >= 0.6:
-                    bg = ACCENT + "99"
-                elif pct >= 0.4:
-                    bg = ACCENT + "66"
-                elif pct >= 0.2:
-                    bg = ACCENT + "33"
+                
+                if logged > 0:
+                    pct = done_cnt / logged
+                    # Вибираємо індекс кольору від 0 до 5
+                    level_idx = int(pct * 5)
+                    bg = LEVELS[level_idx]
                 else:
-                    bg = FAIL + "44"
+                    bg = SURFACE2
 
             cell = tk.Label(cells, text=str(d), bg=bg,
-                            fg=BG if pct >= 0.8 else TEXT_DIM,
+                            fg=TEXT if pct < 0.6 else BG,
                             font=("Consolas", 8), width=3, height=2)
             cell.pack(side="left", padx=1, pady=1)
 
