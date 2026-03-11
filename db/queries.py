@@ -205,8 +205,7 @@ def get_habit_history(habit_id: int, days: int = STATS_HABIT_DAYS) -> list[tuple
     with get_session() as s:
         rows = (
             s.query(HabitLog.log_date, HabitLog.value)
-            .filter(
-                HabitLog.habit_id >= habit_id,
+           .filter(
                 HabitLog.habit_id == habit_id,
                 HabitLog.log_date >= from_date,
             )

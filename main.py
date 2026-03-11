@@ -1,102 +1,94 @@
 """
-SelfMaster — Інструмент для покращення себе
-Головний файл запуску.
+SelfMaster v2.0 — Головний файл
+Запустити: python main.py
 
-Вкладки:
-  1. Сьогодні   — щоденне логування звичок + щоденник + ідеальна людина
-  2. Місяць     — повна таблиця-сітка за місяць
-  3. Статистика — графіки та аналітика
-  4. Ідеал      — критерії ідеальної людини
-  5. Звички     — керування звичками
-  6. Цілі       — постановка та відстеження цілей
+Дані зберігаються локально: ~/.selfmaster/data.db (SQLite)
+Залежності: тільки Python стандартна бібліотека + tkinter
+Опційно: pip install matplotlib  (для графіків)
 """
 import tkinter as tk
 from tkinter import ttk
-import sys
-import os
-
-# Allow running from project root
+import sys, os
+from datetime import date
+from ui.theme import *
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from db.database import init_db
-from ui.theme import apply_theme, BG, SURFACE, SURFACE2, TEXT, ACCENT, TEXT_DIM, BORDER
-from ui import TodayTab, MonthTab, StatsTab, IdealTab, HabitsTab, GoalsTab
+from db import init_db 
 
 
 class SelfMasterApp:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("SelfMaster — Покращення Себе")
-        self.root.geometry("1280x820")
-        self.root.minsize(900, 600)
+        self.root.geometry(f"{WINDOW_WIDTH}x{WINDOW_HEIGHT}")
+        self.root.minsize(WINDOW_MIN_W, WINDOW_MIN_H)
         self.root.configure(bg=BG)
 
-        # Icon (optional)
-        try:
-            # If bundled with PyInstaller
-            base = sys._MEIPASS
-        except AttributeError:
-            base = os.path.dirname(os.path.abspath(__file__))
-
-        # Init DB
+        # Init database (creates ~/.selfmaster/data.db if not exists)
         init_db()
 
-        # Apply theme
         apply_theme(self.root)
-
         self._build_ui()
-        self._auto_refresh()
 
     def _build_ui(self):
-        # ── Sidebar nav ───────────────────────────────────────────────────
-        sidebar = tk.Frame(self.root, bg=SURFACE, width=200)
+        # ── Sidebar ───────────────────────────────────────────────────────
+        sidebar = tk.Frame(self.root, bg=SURFACE, width=220)
         sidebar.pack(side="left", fill="y")
         sidebar.pack_propagate(False)
 
-        # Logo
-        logo = tk.Frame(sidebar, bg=SURFACE, pady=20)
-        logo.pack(fill="x")
-        tk.Label(logo, text="SELF", bg=SURFACE, fg=ACCENT,
-                 font=("Segoe UI", 18, "bold")).pack()
-        tk.Label(logo, text="MASTER", bg=SURFACE, fg=TEXT,
-                 font=("Segoe UI", 12, "bold")).pack()
-        tk.Label(logo, text="Покращення Себе", bg=SURFACE, fg=TEXT_DIM,
-                 font=("Consolas", 8)).pack()
+        # Right border
+        tk.Frame(sidebar, bg=BORDER, width=1).pack(side="right", fill="y")
 
-        tk.Frame(sidebar, bg=BORDER, height=1).pack(fill="x", padx=16)
+        # ── Logo ─────────────────────────────────────────────────────────
+        logo_f = tk.Frame(sidebar, bg=SURFACE, pady=28)
+        logo_f.pack(fill="x")
 
-        # Navigation items
+        # Logo dot
+        dot = tk.Canvas(logo_f, width=36, height=36, bg=SURFACE,
+                        highlightthickness=0)
+        dot.pack(pady=(0,8))
+        dot.create_oval(3, 3, 33, 33, fill=ACCENT, outline="")
+        dot.create_text(18, 18, text="S", fill=TEXT, font=("Segoe UI",16,"bold"))
+
+        tk.Label(logo_f, text="SelfMaster", bg=SURFACE, fg=TEXT,
+                 font=("Segoe UI",13,"bold")).pack()
+        tk.Label(logo_f, text="Покращення Себе", bg=SURFACE, fg=TEXT_DIM,
+                 font=("Consolas",8)).pack()
+
+        tk.Frame(sidebar, bg=BORDER, height=1).pack(fill="x", padx=16, pady=(0,8))
+
+        # ── Nav items ─────────────────────────────────────────────────────
         nav_items = [
-            ("📅", "Сьогодні",   "today"),
-            ("📊", "Місяць",     "month"),
-            ("📈", "Статистика", "stats"),
-            ("🌟", "Ідеал",      "ideal"),
-            ("⚙️", "Звички",     "habits"),
-            ("🎯", "Цілі",       "goals"),
+            ("📅", "Сьогодні",   "today",  ACCENT),
+            ("📊", "Місяць",     "month",  ACCENT3),
+            ("📈", "Статистика", "stats",  ACCENT2),
+            ("🌟", "Ідеал",      "ideal",  ACCENT2),
+            ("⚙️", "Звички",     "habits", ACCENT),
+            ("🎯", "Цілі",       "goals",  "#f59e0b"),
         ]
 
         self._nav_btns = {}
         self._active_tab = tk.StringVar(value="today")
 
-        for emoji, label, key in nav_items:
-            btn = self._nav_button(sidebar, emoji, label, key)
-            self._nav_btns[key] = btn
+        for emoji, label, key, color in nav_items:
+            btn = self._make_nav_btn(sidebar, emoji, label, key, color)
+            self._nav_btns[key] = (btn, color)
 
-        # Bottom: date + version
+        # ── Bottom info ───────────────────────────────────────────────────
+        tk.Frame(sidebar, bg=BORDER, height=1).pack(side="bottom", fill="x", padx=16, pady=(0,8))
         bottom = tk.Frame(sidebar, bg=SURFACE)
-        bottom.pack(side="bottom", fill="x", padx=12, pady=12)
-        from datetime import date
-        tk.Label(bottom, text=date.today().strftime("%d.%m.%Y"),
-                 bg=SURFACE, fg=TEXT_DIM, font=("Consolas", 9)).pack(anchor="w")
-        tk.Label(bottom, text="v1.0.0", bg=SURFACE, fg=TEXT_DIM,
-                 font=("Consolas", 8)).pack(anchor="w")
+        bottom.pack(side="bottom", fill="x", padx=16, pady=(0,16))
 
-        # ── Content area ─────────────────────────────────────────────────
+        tk.Label(bottom, text=f"💾 {DB_PATH}", bg=SURFACE, fg=TEXT_DIM,
+                 font=("Consolas",7), wraplength=185, justify="left").pack(anchor="w")
+        tk.Label(bottom, text=f"v2.0  •  {date.today():%d.%m.%Y}",
+                 bg=SURFACE, fg=TEXT_DIM, font=("Consolas",8)).pack(anchor="w", pady=(4,0))
+
+        # ── Content area ──────────────────────────────────────────────────
         self._content = tk.Frame(self.root, bg=BG)
         self._content.pack(side="left", fill="both", expand=True)
 
-        # ── Tab frames ────────────────────────────────────────────────────
-        self._tabs = {}
+        # ── Tabs ──────────────────────────────────────────────────────────
         tab_classes = {
             "today":  TodayTab,
             "month":  MonthTab,
@@ -105,6 +97,7 @@ class SelfMasterApp:
             "habits": HabitsTab,
             "goals":  GoalsTab,
         }
+        self._tabs = {}
         for key, cls in tab_classes.items():
             tab = cls(self._content)
             tab.place(relwidth=1, relheight=1)
@@ -112,37 +105,36 @@ class SelfMasterApp:
 
         self._switch_tab("today")
 
-    def _nav_button(self, parent, emoji, label, key):
+    def _make_nav_btn(self, parent, emoji, label, key, color):
         f = tk.Frame(parent, bg=SURFACE, cursor="hand2")
-        f.pack(fill="x", padx=8, pady=2)
+        f.pack(fill="x", padx=10, pady=2)
 
-        inner = tk.Frame(f, bg=SURFACE, padx=12, pady=10)
-        inner.pack(fill="x")
+        # Accent indicator bar (left)
+        indicator = tk.Frame(f, bg=SURFACE, width=3)
+        indicator.pack(side="left", fill="y")
+
+        inner = tk.Frame(f, bg=SURFACE, padx=12, pady=12)
+        inner.pack(side="left", fill="x", expand=True)
 
         em_lbl = tk.Label(inner, text=emoji, bg=SURFACE,
-                          font=("Segoe UI", 14))
-        em_lbl.pack(side="left", padx=(0, 10))
+                          font=("Segoe UI",14))
+        em_lbl.pack(side="left", padx=(0,10))
 
         txt_lbl = tk.Label(inner, text=label, bg=SURFACE, fg=TEXT_DIM,
-                           font=("Segoe UI", 10, "bold"), anchor="w")
+                           font=("Segoe UI",10,"bold"), anchor="w")
         txt_lbl.pack(side="left", fill="x", expand=True)
-
-        accent_bar = tk.Frame(f, bg=SURFACE, width=3)
-        accent_bar.pack(side="right", fill="y")
 
         def on_enter(e):
             if self._active_tab.get() != key:
-                inner.configure(bg=SURFACE2)
-                em_lbl.configure(bg=SURFACE2)
-                txt_lbl.configure(bg=SURFACE2)
-                f.configure(bg=SURFACE2)
+                for w in [f, inner, em_lbl, txt_lbl]:
+                    w.configure(bg=SURFACE2)
+                indicator.configure(bg=_hex_fade(color, 0.4))
 
         def on_leave(e):
             if self._active_tab.get() != key:
-                inner.configure(bg=SURFACE)
-                em_lbl.configure(bg=SURFACE)
-                txt_lbl.configure(bg=SURFACE)
-                f.configure(bg=SURFACE)
+                for w in [f, inner, em_lbl, txt_lbl]:
+                    w.configure(bg=SURFACE)
+                indicator.configure(bg=SURFACE)
 
         def on_click(e):
             self._switch_tab(key)
@@ -155,44 +147,31 @@ class SelfMasterApp:
         f._inner = inner
         f._em = em_lbl
         f._txt = txt_lbl
-        f._bar = accent_bar
+        f._indicator = indicator
+        f._color = color
         return f
 
     def _switch_tab(self, key):
-        # Deactivate old
         old = self._active_tab.get()
         if old in self._nav_btns:
-            btn = self._nav_btns[old]
+            btn, _ = self._nav_btns[old]
             for w in [btn, btn._inner, btn._em, btn._txt]:
                 w.configure(bg=SURFACE)
             btn._txt.configure(fg=TEXT_DIM)
-            btn._bar.configure(bg=SURFACE)
+            btn._indicator.configure(bg=SURFACE)
 
-        # Activate new
         self._active_tab.set(key)
-        btn = self._nav_btns[key]
+        btn, color = self._nav_btns[key]
         for w in [btn, btn._inner, btn._em, btn._txt]:
-            w.configure(bg=BG)
-        btn._txt.configure(fg=ACCENT)
-        btn._bar.configure(bg=ACCENT)
+            w.configure(bg=SURFACE2)
+        btn._txt.configure(fg=color)
+        btn._indicator.configure(bg=color)
 
-        # Show tab
         for k, tab in self._tabs.items():
-            if k == key:
-                tab.lift()
-            else:
-                tab.lower()
+            tab.lift() if k == key else tab.lower()
 
-        # Refresh the active tab
         if hasattr(self._tabs[key], 'refresh'):
             self._tabs[key].refresh()
-
-    def _auto_refresh(self):
-        """Auto-refresh every 60 seconds."""
-        active = self._active_tab.get()
-        if hasattr(self._tabs.get(active), 'refresh'):
-            pass  # only refresh on switch to avoid interrupting editing
-        self.root.after(60000, self._auto_refresh)
 
     def run(self):
         self.root.mainloop()

@@ -1,284 +1,217 @@
-"""
-SelfMaster - Reusable Widgets
-"""
+"""SelfMaster — Reusable Widgets"""
 import tkinter as tk
 from tkinter import ttk
-from .theme import *
-
-
-def card_frame(parent, **kwargs):
-    """Dark surface card frame."""
-    f = tk.Frame(parent, bg=SURFACE, **kwargs)
-    return f
-
-
-def section_title(parent, text, color=TEXT_DIM):
-    lbl = tk.Label(parent, text=text.upper(), bg=SURFACE,
-                   fg=color, font=("Consolas", 9), anchor="w")
-    return lbl
-
-
-def stat_card(parent, label, value_var, sub="", color=ACCENT, width=140):
-    """Mini stat card widget."""
-    f = tk.Frame(parent, bg=SURFACE, width=width, padx=14, pady=12)
-    f.pack_propagate(False)
-
-    top_line = tk.Frame(f, bg=color, height=2)
-    top_line.pack(fill="x")
-
-    tk.Label(f, text=label.upper(), bg=SURFACE, fg=TEXT_DIM,
-             font=("Consolas", 8), anchor="w").pack(fill="x", pady=(6, 2))
-
-    val_lbl = tk.Label(f, textvariable=value_var if isinstance(value_var, tk.StringVar) else None,
-                       text=value_var if isinstance(value_var, str) else "",
-                       bg=SURFACE, fg=color, font=("Segoe UI", 22, "bold"), anchor="w")
-    val_lbl.pack(fill="x")
-
-    if sub:
-        tk.Label(f, text=sub, bg=SURFACE, fg=TEXT_DIM,
-                 font=("Consolas", 8), anchor="w").pack(fill="x")
-
-    return f, val_lbl
+from ui.theme import *
 
 
 def scrollable_frame(parent, bg=None):
-    """Returns (outer_frame, inner_frame) with scrollbar."""
     bg = bg or BG
     outer = tk.Frame(parent, bg=bg)
     canvas = tk.Canvas(outer, bg=bg, highlightthickness=0, bd=0)
     sb = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
     inner = tk.Frame(canvas, bg=bg)
-
     inner.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
     canvas.create_window((0, 0), window=inner, anchor="nw")
     canvas.configure(yscrollcommand=sb.set)
-
     sb.pack(side="right", fill="y")
     canvas.pack(side="left", fill="both", expand=True)
 
-    def _on_mousewheel(event):
-        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-    canvas.bind_all("<MouseWheel>", _on_mousewheel)
-
+    def _scroll(event):
+        canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+    canvas.bind_all("<MouseWheel>", _scroll)
     return outer, inner
 
 
 def hscrollable_frame(parent, bg=None):
-    """Returns (outer_frame, inner_frame) with horizontal scrollbar."""
     bg = bg or BG
     outer = tk.Frame(parent, bg=bg)
     canvas = tk.Canvas(outer, bg=bg, highlightthickness=0, bd=0)
-    sb = ttk.Scrollbar(outer, orient="horizontal", command=canvas.xview)
+    hsb = ttk.Scrollbar(outer, orient="horizontal", command=canvas.xview)
     vsb = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
     inner = tk.Frame(canvas, bg=bg)
-
     inner.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
     canvas.create_window((0, 0), window=inner, anchor="nw")
-    canvas.configure(xscrollcommand=sb.set, yscrollcommand=vsb.set)
-
+    canvas.configure(xscrollcommand=hsb.set, yscrollcommand=vsb.set)
     vsb.pack(side="right", fill="y")
-    sb.pack(side="bottom", fill="x")
+    hsb.pack(side="bottom", fill="x")
     canvas.pack(side="left", fill="both", expand=True)
 
-    def _on_mousewheel(event):
-        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-    canvas.bind_all("<MouseWheel>", _on_mousewheel)
-
+    def _scroll(event):
+        canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+    canvas.bind_all("<MouseWheel>", _scroll)
     return outer, inner
 
 
-class RoundedButton(tk.Canvas):
-    """Canvas-based rounded button."""
-    def __init__(self, parent, text, command=None, color=ACCENT,
-                 fg=BG, width=120, height=36, radius=8, font=FONT_BOLD, **kwargs):
-        super().__init__(parent, width=width, height=height,
-                         bg=parent["bg"], highlightthickness=0, **kwargs)
-        self._color = color
-        self._fg = fg
-        self._text = text
-        self._command = command
-        self._r = radius
-        self._w = width
-        self._h = height
-        self._font = font
-        self._draw()
-        self.bind("<Button-1>", self._on_click)
-        self.bind("<Enter>", self._on_enter)
-        self.bind("<Leave>", self._on_leave)
-
-    def _draw(self, color=None):
-        self.delete("all")
-        c = color or self._color
-        r = self._r
-        w, h = self._w, self._h
-        self.create_polygon(
-            r, 0, w-r, 0, w, r, w, h-r, w-r, h, r, h, 0, h-r, 0, r,
-            fill=c, outline="", smooth=True
-        )
-        self.create_text(w//2, h//2, text=self._text, fill=self._fg,
-                         font=self._font)
-
-    def _on_click(self, e):
-        if self._command:
-            self._command()
-
-    def _on_enter(self, e):
-        # slightly lighter
-        self._draw(self._color + "cc")
-
-    def _on_leave(self, e):
-        self._draw()
-
-
-class ProgressRing(tk.Canvas):
-    """Circular progress indicator."""
-    def __init__(self, parent, value=0, max_val=100, size=80,
-                 color=ACCENT, bg=SURFACE, **kwargs):
-        super().__init__(parent, width=size, height=size,
-                         bg=bg, highlightthickness=0, **kwargs)
-        self._size = size
-        self._color = color
-        self._bg = bg
-        self.set(value, max_val)
-
-    def set(self, value, max_val=100):
-        self.delete("all")
-        s = self._size
-        pad = 6
-        extent = (value / max_val * 360) if max_val > 0 else 0
-
-        # Background arc
-        self.create_arc(pad, pad, s-pad, s-pad,
-                        start=90, extent=360,
-                        outline=BORDER, width=6, style="arc")
-        # Value arc
-        if extent > 0:
-            self.create_arc(pad, pad, s-pad, s-pad,
-                            start=90, extent=-extent,
-                            outline=self._color, width=6, style="arc")
-
-        # Text
-        pct = f"{int(value/max_val*100)}%" if max_val > 0 else "—"
-        self.create_text(s//2, s//2, text=pct,
-                         fill=TEXT, font=("Segoe UI", int(s*0.18), "bold"))
-
-
-class MoodPicker(tk.Frame):
-    """5-star mood selector."""
-    def __init__(self, parent, label="", initial=3, callback=None, **kwargs):
-        super().__init__(parent, bg=BG, **kwargs)
-        self._val = tk.IntVar(value=initial)
-        self._cb = callback
-        self._btns = []
-
-        if label:
-            tk.Label(self, text=label, bg=BG, fg=TEXT_DIM,
-                     font=FONT_MONO).pack(side="left", padx=(0, 8))
-
-        for i in range(1, 6):
-            emoji = MOOD_LABELS[i].split()[0]
-            btn = tk.Label(self, text=emoji, bg=BG,
-                           font=("Segoe UI", 16), cursor="hand2")
-            btn.pack(side="left", padx=2)
-            btn.bind("<Button-1>", lambda e, v=i: self._select(v))
-            self._btns.append(btn)
-
-        self._refresh()
-
-    def _select(self, val):
-        self._val.set(val)
-        self._refresh()
-        if self._cb:
-            self._cb(val)
-
-    def _refresh(self):
-        v = self._val.get()
-        for i, btn in enumerate(self._btns, 1):
-            btn.configure(fg=MOOD_COLORS.get(i, TEXT_DIM) if i <= v else TEXT_DIM)
-
-    def get(self):
-        return self._val.get()
-
-    def set(self, val):
-        self._val.set(val)
-        self._refresh()
-
-
-class ScoreSlider(tk.Frame):
-    """0-5 score selector with dot buttons."""
-    def __init__(self, parent, initial=0, callback=None, **kwargs):
-        super().__init__(parent, bg=SURFACE, **kwargs)
-        self._val = initial
-        self._cb = callback
-        self._btns = []
-
-        for i in range(6):
-            btn = tk.Label(self, text="●" if i == 0 else str(i),
-                           bg=SURFACE, font=("Segoe UI", 11), cursor="hand2",
-                           width=2)
-            btn.pack(side="left", padx=1)
-            btn.bind("<Button-1>", lambda e, v=i: self._select(v))
-            self._btns.append(btn)
-
-        self._refresh()
-
-    def _select(self, val):
-        self._val = val
-        self._refresh()
-        if self._cb:
-            self._cb(val)
-
-    def _refresh(self):
-        for i, btn in enumerate(self._btns):
-            if i == 0:
-                btn.configure(fg=TEXT_DIM if self._val > 0 else FAIL)
-                continue
-            if i <= self._val:
-                colors = [None, FAIL, STREAK, ACCENT3, ACCENT, SUCCESS]
-                btn.configure(fg=colors[self._val] if self._val < len(colors) else ACCENT)
-            else:
-                btn.configure(fg=BORDER)
-
-    def get(self):
-        return self._val
-
-    def set(self, val):
-        self._val = val
-        self._refresh()
-
-
-class TagBadge(tk.Label):
-    """Small colored tag/badge."""
-    def __init__(self, parent, text, color=ACCENT3, **kwargs):
-        super().__init__(parent, text=f" {text} ",
-                         bg=color + "22", fg=color,
-                         font=("Consolas", 8),
-                         relief="flat", **kwargs)
-
-
-def separator(parent, color=BORDER, orient="horizontal", pady=8):
-    if orient == "horizontal":
-        f = tk.Frame(parent, bg=color, height=1)
-        f.pack(fill="x", pady=pady)
-    else:
-        f = tk.Frame(parent, bg=color, width=1)
-        f.pack(fill="y", padx=pady, side="left")
+def card(parent, accent_color=None, padx=16, pady=12, **kwargs):
+    f = tk.Frame(parent, bg=SURFACE, padx=padx, pady=pady, **kwargs)
+    if accent_color:
+        tk.Frame(f, bg=accent_color, height=2).pack(fill="x")
     return f
 
 
-def labeled_entry(parent, label, var=None, placeholder="", width=30, bg=None):
-    """Label + Entry pair."""
-    bg = bg or BG
+def section_header(parent, title, color=TEXT_DIM):
+    hdr = tk.Frame(parent, bg=BG)
+    hdr.pack(fill="x", pady=(12, 4))
+    tk.Label(hdr, text=title, bg=BG, fg=color,
+             font=("Consolas", 8, "bold")).pack(side="left")
+    tk.Frame(hdr, bg=BORDER, height=1).pack(
+        side="left", fill="x", expand=True, padx=(8, 0), pady=10)
+    return hdr
+
+
+def labeled_entry(parent, label, var=None, width=30, bg=None, **kwargs):
+    bg = bg or SURFACE2
     f = tk.Frame(parent, bg=bg)
     tk.Label(f, text=label, bg=bg, fg=TEXT_DIM, font=FONT_MONO).pack(anchor="w")
     if var is None:
         var = tk.StringVar()
-    e = tk.Entry(f, textvariable=var, bg=SURFACE2, fg=TEXT,
+    e = tk.Entry(f, textvariable=var, bg=SURFACE3, fg=TEXT,
                  font=FONT_MAIN, relief="flat", insertbackground=TEXT,
                  width=width, bd=0,
-                 highlightthickness=1, highlightcolor=ACCENT3,
-                 highlightbackground=BORDER)
-    e.pack(fill="x", ipady=6, pady=(2, 0))
+                 highlightthickness=1, highlightcolor=ACCENT,
+                 highlightbackground=BORDER, **kwargs)
+    e.pack(fill="x", ipady=7, pady=(3, 0))
     return f, var
+
+
+def pill_badge(parent, text, color=ACCENT, **kwargs):
+    return tk.Label(parent, text=f" {text} ",
+                    bg=_hex_fade(color, 0.15), fg=color,
+                    font=("Consolas", 8), relief="flat", **kwargs)
+
+def _hex_fade(hex_color, alpha):
+    """Simulate transparent color by blending with SURFACE."""
+    try:
+        r = int(hex_color[1:3], 16)
+        g = int(hex_color[3:5], 16)
+        b = int(hex_color[5:7], 16)
+        sr = int(SURFACE[1:3], 16)
+        sg = int(SURFACE[3:5], 16)
+        sb = int(SURFACE[5:7], 16)
+        nr = int(r*alpha + sr*(1-alpha))
+        ng = int(g*alpha + sg*(1-alpha))
+        nb = int(b*alpha + sb*(1-alpha))
+        return f"#{nr:02x}{ng:02x}{nb:02x}"
+    except: return SURFACE2
+
+
+class MoodPicker(tk.Frame):
+    def __init__(self, parent, initial=3, callback=None, **kwargs):
+        super().__init__(parent, bg=kwargs.pop('bg', SURFACE), **kwargs)
+        self._val = tk.IntVar(value=initial)
+        self._cb = callback
+        self._btns = []
+        for i in range(1, 6):
+            em = MOOD_LABELS[i].split()[0]
+            btn = tk.Label(self, text=em, bg=self['bg'],
+                           font=("Segoe UI", 15), cursor="hand2")
+            btn.pack(side="left", padx=3)
+            btn.bind("<Button-1>", lambda e, v=i: self._select(v))
+            self._btns.append(btn)
+        self._refresh()
+
+    def _select(self, val):
+        self._val.set(val)
+        self._refresh()
+        if self._cb: self._cb(val)
+
+    def _refresh(self):
+        v = self._val.get()
+        for i, btn in enumerate(self._btns, 1):
+            btn.configure(fg=MOOD_COLORS.get(i, TEXT_DIM) if i <= v else BORDER)
+
+    def get(self): return self._val.get()
+    def set(self, val): self._val.set(val); self._refresh()
+
+
+class ScoreSlider(tk.Frame):
+    def __init__(self, parent, initial=0, callback=None, **kwargs):
+        bg = kwargs.pop('bg', SURFACE)
+        super().__init__(parent, bg=bg, **kwargs)
+        self._val = initial
+        self._cb = callback
+        self._bg = bg
+        self._btns = []
+        score_colors = ["", FAIL, STREAK, ACCENT3, ACCENT, SUCCESS]
+        for i in range(6):
+            txt = "●" if i == 0 else str(i)
+            btn = tk.Label(self, text=txt, bg=bg,
+                           font=("Segoe UI", 12), cursor="hand2", width=2)
+            btn.pack(side="left", padx=1)
+            btn.bind("<Button-1>", lambda e, v=i: self._select(v))
+            self._btns.append(btn)
+        self._refresh()
+
+    def _select(self, val):
+        self._val = val
+        self._refresh()
+        if self._cb: self._cb(val)
+
+    def _refresh(self):
+        score_colors = ["", FAIL, STREAK, ACCENT3, ACCENT, SUCCESS]
+        for i, btn in enumerate(self._btns):
+            if i == 0:
+                btn.configure(fg=TEXT_DIM if self._val > 0 else BORDER)
+            elif i <= self._val:
+                btn.configure(fg=score_colors[self._val] if self._val < len(score_colors) else ACCENT)
+            else:
+                btn.configure(fg=BORDER)
+
+    def get(self): return self._val
+    def set(self, val): self._val = val; self._refresh()
+
+
+class GlowButton(tk.Canvas):
+    """Animated glow button."""
+    def __init__(self, parent, text, command=None, color=ACCENT,
+                 fg=TEXT, width=130, height=38, **kwargs):
+        super().__init__(parent, width=width, height=height,
+                         bg=parent['bg'] if 'bg' not in kwargs else kwargs.pop('bg'),
+                         highlightthickness=0, **kwargs)
+        self._color = color
+        self._fg = fg
+        self._text = text
+        self._cmd = command
+        self._w = width
+        self._h = height
+        self._hover = False
+        self._draw()
+        self.bind("<Button-1>", self._click)
+        self.bind("<Enter>", self._enter)
+        self.bind("<Leave>", self._leave)
+
+    def _draw(self, hover=False):
+        self.delete("all")
+        c = self._color
+        r = 8
+        w, h = self._w, self._h
+        bg = _hex_fade(c, 0.25 if hover else 0.15)
+        pts = [r,0, w-r,0, w,r, w,h-r, w-r,h, r,h, 0,h-r, 0,r]
+        self.create_polygon(pts, fill=bg, outline=c if hover else BORDER, width=1, smooth=True)
+        self.create_text(w//2, h//2, text=self._text, fill=self._fg if hover else TEXT_MID,
+                         font=FONT_BOLD)
+
+    def _click(self, e):
+        if self._cmd: self._cmd()
+
+    def _enter(self, e): self._draw(True)
+    def _leave(self, e): self._draw(False)
+
+
+class ProgressBar(tk.Frame):
+    def __init__(self, parent, value=0, max_val=100, color=ACCENT,
+                 height=6, show_text=False, **kwargs):
+        bg = kwargs.pop('bg', SURFACE)
+        super().__init__(parent, bg=bg, **kwargs)
+        self._color = color
+        self._height = height
+        self._show_text = show_text
+        self._bar_bg = tk.Frame(self, bg=SURFACE3, height=height)
+        self._bar_bg.pack(fill="x")
+        self._bar_fill = tk.Frame(self._bar_bg, bg=color, height=height)
+        self._bar_fill.place(x=0, y=0, relheight=1)
+        self.set(value, max_val)
+
+    def set(self, value, max_val=100):
+        pct = max(0, min(1, value/max_val)) if max_val else 0
+        self._bar_fill.place(relwidth=pct, relheight=1)
