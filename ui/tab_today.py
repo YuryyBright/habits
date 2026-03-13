@@ -4,8 +4,15 @@ from tkinter import ttk
 from datetime import date, timedelta
 from ui import *
 from ui.theme import *
-from ui.widgets import _hex_fade
-import db
+from ui.widgets import (
+    _hex_fade, 
+    scrollable_frame, 
+    MoodPicker, 
+    ScoreSlider, 
+    card, 
+    section_header
+)
+from db import queries as db
 from config import WEEKDAYS_UK, MONTHS_UK_GEN
 
 

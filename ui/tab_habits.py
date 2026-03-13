@@ -3,7 +3,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox, colorchooser
 from ui import *
 from ui.theme import *
-import db
+from ui.widgets import scrollable_frame, hscrollable_frame, card, section_header, _hex_fade, labeled_entry
+from db import queries as db
 
 HABIT_TYPES = [("toggle","✅ Так/Ні"), ("number","🔢 Числове")]
 CATEGORIES = [("health","❤️ Здоров'я"),("mind","🧠 Розум"),("physical","💪 Фізичне"),

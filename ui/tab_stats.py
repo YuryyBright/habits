@@ -4,7 +4,8 @@ from tkinter import ttk
 from datetime import date, timedelta
 from ui import *
 from ui.theme import *
-import db
+from ui.widgets import scrollable_frame, hscrollable_frame, card, section_header, _hex_fade
+from db import queries as db
 
 
 class StatsTab(tk.Frame):

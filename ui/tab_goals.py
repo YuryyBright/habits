@@ -3,8 +3,9 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import date
 from ui import *
-import db
+from db import queries as db
 from ui.theme import *
+from ui.widgets import scrollable_frame, hscrollable_frame, card, section_header, _hex_fade, labeled_entry
 GOAL_CATEGORIES = [
     ("health","❤️ Здоров'я"),("career","💼 Кар'єра"),
     ("financial","💰 Фінанси"),("personal","🌱 Розвиток"),

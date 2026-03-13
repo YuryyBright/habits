@@ -4,8 +4,16 @@ from tkinter import ttk, messagebox
 from datetime import date
 from collections import defaultdict
 from ui import *
-import db
+from ui.widgets import scrollable_frame, hscrollable_frame, card, section_header, _hex_fade, labeled_entry
+from ui.theme import  FONT_TITLE, FONT_BOLD, FONT_MONO, ACCENT, ACCENT2, ACCENT3, TEXT_DIM, SURFACE, SURFACE2, SURFACE3, BORDER, BG, FONT_MAIN, STREAK, CATEGORY_COLORS, CATEGORY_LABELS, FAIL
 
+from db.database import get_session
+from db.models import IdealScore
+from sqlalchemy import func
+from datetime import timedelta
+from ui.theme import *
+from db import queries as db
+from ui.widgets import scrollable_frame, card, section_header, ScoreSlider
 CATEGORIES = [("physical","💪 Фізичне"),("mental","🧠 Ментальне"),("social","❤️ Соціальне"),
               ("financial","💰 Фінансове"),("spiritual","🧘 Духовне"),("other","🎨 Інше")]
 ICONS = ["🎯","💪","🧠","❤️","💰","🧘","📚","🎨","🏃","🌱","🤝","🔥","⭐","📈","🌟","🏆","✅","😊"]
@@ -150,14 +158,20 @@ class IdealTab(tk.Frame):
         b.bind("<Leave>", lambda e: b.configure(bg=SURFACE3))
 
     def _recent_scores(self, criterion_id, days=7):
-        from datetime import timedelta
-        from_date = date.today() - timedelta(days=days)
-        with db.get_conn() as conn:
-            rows = conn.execute(
-                "SELECT score FROM ideal_scores WHERE criterion_id=? AND score_date>=?",
-                (criterion_id, from_date.isoformat())
-            ).fetchall()
-        return [r['score'] for r in rows]
+        start_date = date.today() - timedelta(days=days-1)
+        
+        with get_session() as session:
+            rows = (
+                session.query(IdealScore)
+                .filter(
+                    IdealScore.criterion_id == criterion_id,
+                    IdealScore.score_date >= start_date
+                )
+                .order_by(IdealScore.score_date.asc())
+                .all()
+            )
+            
+            return [r.score for r in rows]          # краще повертати список чисел
 
     def _score_lbl(self, score):
         labels = {0:"0 — Нічого",1:"1 — Слабко",2:"2 — Нижче норми",

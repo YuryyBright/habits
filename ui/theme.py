@@ -1,41 +1,42 @@
-"""SelfMaster — Theme v2 (Modern Dark-Light Hybrid)"""
+"""SelfMaster — Theme v2 Light (Modern Clean Light)"""
 
 # ── Palette ──────────────────────────────────────────────────────────────────
-BG         = "#0f0f13"     # Deep dark background
-SURFACE    = "#1a1a24"     # Card surface
-SURFACE2   = "#22222e"     # Secondary surface
-SURFACE3   = "#2a2a38"     # Hover/active surface
-BORDER     = "#2e2e3e"     # Subtle borders
+BG         = "#f8f9fc"     # Світлий чистий фон
+SURFACE    = "#ffffff"     # Білий для карток / основних поверхонь
+SURFACE2   = "#f1f5f9"     # Дуже світлий сірий для другого рівня
+SURFACE3   = "#e2e8f0"     # Hover / active / розділювачі
 
-# Accent colors (vibrant)
-ACCENT     = "#6366f1"     # Indigo
+BORDER     = "#cbd5e1"     # М'які межі
+
+# Accent colors (залишив майже ті самі, але трохи м'якші тони)
+ACCENT     = "#6366f1"     # Indigo (головний акцент)
 ACCENT_L   = "#818cf8"     # Light indigo (hover)
 ACCENT2    = "#ec4899"     # Pink
 ACCENT3    = "#06b6d4"     # Cyan
 ACCENT4    = "#8b5cf6"     # Violet
 
-TEXT       = "#f1f5f9"     # Primary text
-TEXT_DIM   = "#64748b"     # Secondary text
-TEXT_MID   = "#94a3b8"     # Medium text
+TEXT       = "#0f172a"     # Майже чорний — дуже добре читається
+TEXT_DIM   = "#64748b"     # Сірий для другорядного тексту
+TEXT_MID   = "#475569"     # Трохи темніший сірий
 
-DONE       = "#22c55e"     # Green
-FAIL       = "#ef4444"     # Red
-STREAK     = "#f59e0b"     # Amber
-SUCCESS    = "#10b981"     # Emerald
+DONE       = "#16a34a"     # Зелений (трохи темніший для контрасту)
+FAIL       = "#dc2626"     # Червоний
+STREAK     = "#d97706"     # Темніший amber
+SUCCESS    = "#059669"     # Emerald
 
-# Category colors
+# Category colors — зроблено трохи яскравішими/насиченішими
 CATEGORY_COLORS = {
-    "physical":  "#22c55e",
+    "physical":  "#16a34a",
     "mental":    "#6366f1",
-    "social":    "#ec4899",
-    "financial": "#f59e0b",
-    "spiritual": "#8b5cf6",
-    "other":     "#64748b",
-    "health":    "#22c55e",
-    "mind":      "#06b6d4",
-    "general":   "#64748b",
+    "social":    "#db2777",
+    "financial": "#d97706",
+    "spiritual": "#7c3aed",
+    "other":     "#6b7280",
+    "health":    "#16a34a",
+    "mind":      "#0891b2",
+    "general":   "#6b7280",
 }
-CATEGORY_LABELS = {
+CATEGORY_LABELS = {     # без змін
     "physical":  "💪 Фізичне",
     "mental":    "🧠 Ментальне",
     "social":    "❤️ Соціальне",
@@ -47,16 +48,30 @@ CATEGORY_LABELS = {
     "general":   "📌 Загальне",
 }
 
-MOOD_COLORS = {1:"#ef4444", 2:"#f97316", 3:"#f59e0b", 4:"#84cc16", 5:"#22c55e"}
-MOOD_LABELS = {1:"😞 Погано", 2:"😕 Не дуже", 3:"😐 Нормально", 4:"😊 Добре", 5:"😄 Чудово"}
+MOOD_COLORS = {
+    1: "#dc2626",   # Погано
+    2: "#f97316",
+    3: "#ca8a04",
+    4: "#65a30d",
+    5: "#16a34a"    # Чудово
+}
+MOOD_LABELS = {         # без змін
+    1: "😞 Погано",
+    2: "😕 Не дуже",
+    3: "😐 Нормально",
+    4: "😊 Добре",
+    5: "😄 Чудово"
+}
 
 # ── Fonts ─────────────────────────────────────────────────────────────────────
+# Залишаємо ті самі, бо вони універсальні
 FONT_MAIN  = ("Segoe UI", 10)
 FONT_BOLD  = ("Segoe UI", 10, "bold")
 FONT_TITLE = ("Segoe UI", 13, "bold")
 FONT_BIG   = ("Segoe UI", 20, "bold")
 FONT_MONO  = ("Consolas", 9)
 FONT_MONO_B = ("Consolas", 9, "bold")
+
 
 def apply_theme(root):
     import tkinter as tk
@@ -72,39 +87,52 @@ def apply_theme(root):
     style.configure("TButton", background=SURFACE2, foreground=TEXT,
                     font=FONT_BOLD, padding=(10,6), relief="flat", borderwidth=0)
     style.map("TButton",
-              background=[("active", SURFACE3)],
-              foreground=[("active", ACCENT_L)])
-    style.configure("TScrollbar", background=SURFACE2, troughcolor=SURFACE,
+              background=[("active", SURFACE3), ("pressed", SURFACE3)],
+              foreground=[("active", ACCENT)])
+    style.configure("TScrollbar", background=SURFACE2, troughcolor=BG,
                     borderwidth=0, arrowsize=10, relief="flat")
     style.map("TScrollbar", background=[("active", SURFACE3)])
-    style.configure("TCombobox", fieldbackground=SURFACE2, background=SURFACE2,
+    style.configure("TCombobox", fieldbackground=SURFACE, background=SURFACE,
                     foreground=TEXT, selectbackground=ACCENT,
-                    selectforeground=TEXT, bordercolor=BORDER, arrowcolor=TEXT_DIM)
-    style.configure("TEntry", fieldbackground=SURFACE2, foreground=TEXT,
+                    selectforeground="white", bordercolor=BORDER, arrowcolor=TEXT_DIM)
+    style.configure("TEntry", fieldbackground=SURFACE, foreground=TEXT,
                     bordercolor=BORDER, insertcolor=TEXT)
     style.configure("TScale", background=BG, troughcolor=SURFACE2,
                     sliderrelief="flat", sliderlength=16)
     style.configure("Horizontal.TProgressbar", troughcolor=SURFACE2,
-                    background=ACCENT, borderwidth=0, thickness=4)
-    style.configure("TCheckbutton", background=BG, foreground=TEXT_MID,
-                    indicatorcolor=SURFACE2, font=FONT_MAIN)
+                    background=ACCENT, borderwidth=0, thickness=5)
+    style.configure("TCheckbutton", background=BG, foreground=TEXT,
+                    indicatorcolor=SURFACE, font=FONT_MAIN)
     style.map("TCheckbutton",
-              indicatorcolor=[("selected", ACCENT)],
+              indicatorcolor=[("selected", ACCENT), ("active", ACCENT_L)],
               background=[("active", BG)])
-    style.configure("TNotebook", background=SURFACE, borderwidth=0)
+    style.configure("TNotebook", background=BG, borderwidth=0)
     style.configure("TNotebook.Tab", background=SURFACE2, foreground=TEXT_DIM,
                     font=FONT_BOLD, padding=(16, 10))
     style.map("TNotebook.Tab",
-              background=[("selected", BG)],
+              background=[("selected", SURFACE)],
               foreground=[("selected", ACCENT)])
     style.configure("Treeview", background=SURFACE, foreground=TEXT,
                     fieldbackground=SURFACE, rowheight=30)
     style.configure("Treeview.Heading", background=SURFACE2, foreground=TEXT_DIM,
                     font=FONT_MONO)
-    style.map("Treeview", background=[("selected", SURFACE3)],
-              foreground=[("selected", ACCENT_L)])
+    style.map("Treeview", background=[("selected", ACCENT_L)],
+              foreground=[("selected", "white")])
+
     return style
 
 
-def _hex_fade(hex, alpha):
-    return "#%02x%02x%02x" % tuple(int(hex[i:i+2], 16) * alpha for i in (1,3,5))
+def _hex_fade(hex_color, alpha):
+    """Та сама функція — працює і зі світлим фоном"""
+    try:
+        r = int(hex_color[1:3], 16)
+        g = int(hex_color[3:5], 16)
+        b = int(hex_color[5:7], 16)
+        # Змішуємо з BG (світлим фоном)
+        br, bg_color, bb = int(BG[1:3], 16), int(BG[3:5], 16), int(BG[5:7], 16)
+        nr = int(r * alpha + br * (1 - alpha))
+        ng = int(g * alpha + bg_color * (1 - alpha))
+        nb = int(b * alpha + bb * (1 - alpha))
+        return f"#{nr:02x}{ng:02x}{nb:02x}"
+    except:
+        return SURFACE2

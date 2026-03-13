@@ -11,11 +11,19 @@ from tkinter import ttk
 import sys, os
 from datetime import date
 from ui.theme import *
+from ui.theme import _hex_fade
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from db import init_db 
+from ui.tab_today import TodayTab
+from ui.tab_month import MonthTab
+from ui.tab_stats import StatsTab
+from ui.tab_ideal import IdealTab
+from ui.tab_habits import HabitsTab
+from ui.tab_goals import GoalsTab
 
+from db import init_db
 
+from config import *
 class SelfMasterApp:
     def __init__(self):
         self.root = tk.Tk()

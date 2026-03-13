@@ -23,6 +23,8 @@ def scrollable_frame(parent, bg=None):
 
 
 def hscrollable_frame(parent, bg=None):
+    def _on_mousewheel(event):
+        canvas.yview_scroll(int(-1*(event.delta/120)), "units")
     bg = bg or BG
     outer = tk.Frame(parent, bg=bg)
     canvas = tk.Canvas(outer, bg=bg, highlightthickness=0, bd=0)
@@ -38,8 +40,10 @@ def hscrollable_frame(parent, bg=None):
 
     def _scroll(event):
         canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-    canvas.bind_all("<MouseWheel>", _scroll)
+    canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _on_mousewheel))
+    canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
     return outer, inner
+
 
 
 def card(parent, accent_color=None, padx=16, pady=12, **kwargs):
