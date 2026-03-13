@@ -112,82 +112,91 @@ class MonthTab(tk.Frame):
             w.destroy()
         if not habits:
             tk.Label(self._grid_inner, text="Немає звичок",
-                     bg=BG, fg=TEXT_DIM, font=FONT_MAIN).pack(pady=20)
+                    bg=BG, fg=TEXT_DIM, font=FONT_MAIN).pack(pady=20)
             return
 
-        # Header
-        hdr = tk.Frame(self._grid_inner, bg=SURFACE2)
-        hdr.pack(fill="x")
-        tk.Label(hdr, text="ЗВИЧКА", bg=SURFACE2, fg=TEXT_DIM,
-                 font=("Consolas",8), width=22, anchor="w").pack(side="left", padx=12)
+        table = tk.Frame(self._grid_inner, bg=BG)
+        table.pack(anchor="w")
 
-        for d in range(1, days+1):
+        COL_HABIT = 220  # ширина колонки звички
+        COL_DAY = 28     # ширина колонки дня
+        COL_STAT = 40    # ширина статистичних колонок
+
+        # ── Заголовок ──────────────────────────────────────────
+        hdr = tk.Frame(table, bg=SURFACE2)
+        hdr.grid(row=0, column=0, sticky="w")
+
+        tk.Label(hdr, text="ЗВИЧКА", bg=SURFACE2, fg=TEXT_DIM,
+                font=("Consolas", 8), width=28, anchor="w").pack(side="left", padx=12)
+
+        for d in range(1, days + 1):
             is_today = d == today_day
             bg = SURFACE3 if is_today else SURFACE2
             fg = ACCENT_L if is_today else TEXT_DIM
             tk.Label(hdr, text=str(d), bg=bg, fg=fg,
-                     font=("Consolas",8), width=3, anchor="center").pack(side="left")
+                    font=("Consolas", 8), width=3,
+                    anchor="center").pack(side="left")
 
         for lbl in ["Вик.", "%", "🔥"]:
             tk.Label(hdr, text=lbl, bg=SURFACE2, fg=ACCENT3,
-                     font=("Consolas",8), width=5).pack(side="left")
+                    font=("Consolas", 8), width=5).pack(side="left")
 
-        # Rows
+        # ── Рядки ──────────────────────────────────────────────
         for i, h in enumerate(habits):
             hid = h['id']
             hlog = logs.get(hid, {})
-            row_bg = SURFACE if i%2==0 else SURFACE2
-            row = tk.Frame(self._grid_inner, bg=row_bg)
-            row.pack(fill="x")
+            row_bg = SURFACE if i % 2 == 0 else SURFACE2
+            row = tk.Frame(table, bg=row_bg)
+            row.grid(row=i + 1, column=0, sticky="w")  # sticky="w" — не розтягувати
 
-            # Color dot + label
-            habit_color = h.get('color', ACCENT)
-            dot_f = tk.Frame(row, bg=row_bg, width=180)
+            # Color dot + label (фіксована ширина = заголовку ЗВИЧКА)
+            dot_f = tk.Frame(row, bg=row_bg, width=COL_HABIT)
             dot_f.pack_propagate(False)
             dot_f.pack(side="left")
             inner = tk.Frame(dot_f, bg=row_bg)
-            inner.pack(side="left", fill="y", pady=4)
-            tk.Frame(inner, bg=habit_color, width=2, height=24).pack(side="left", padx=(8,8), pady=5)
+            inner.pack(side="left", fill="both", expand=True, pady=4)
+            tk.Frame(inner, bg=h.get('color', ACCENT), width=3, height=24).pack(
+                side="left", padx=(8, 6), pady=5)
             tk.Label(inner, text=f"{h['emoji']} {h['name']}", bg=row_bg,
-                     fg=TEXT, font=FONT_MONO, anchor="w").pack(side="left")
+                    fg=TEXT, font=FONT_MONO, anchor="w",
+                    wraplength=170, justify="left").pack(side="left", fill="x")
 
             done_cnt = logged_cnt = 0
-            for d in range(1, days+1):
+            for d in range(1, days + 1):
                 val = hlog.get(d)
                 is_future = d > today_day > 0
                 is_today_cell = d == today_day
                 cell_t, cell_fg, cell_bg = self._cell_display(val, h, is_future, is_today_cell, row_bg)
 
                 cell = tk.Label(row, text=cell_t, bg=cell_bg, fg=cell_fg,
-                                font=("Consolas",9), width=3, cursor="hand2" if not is_future else "arrow",
+                                font=("Consolas", 9), width=3,  # width=3 як у заголовку
+                                cursor="hand2" if not is_future else "arrow",
                                 relief="flat", anchor="center")
                 cell.pack(side="left", pady=2, padx=1)
 
                 if not is_future and val is not None:
                     logged_cnt += 1
                     if self._is_done(val, h): done_cnt += 1
-
                 if not is_future:
                     cell.bind("<Button-1>", lambda e, hid=hid, d=d: self._toggle_cell(hid, d))
 
-            pct = round(done_cnt/logged_cnt*100) if logged_cnt else 0
+            pct = round(done_cnt / logged_cnt * 100) if logged_cnt else 0
             cur_s, _ = db.get_habit_streak(hid)
 
             tk.Label(row, text=str(done_cnt), bg=row_bg, fg=ACCENT,
-                     font=("Consolas",9,"bold"), width=5).pack(side="left")
-            pct_c = DONE if pct>=70 else STREAK if pct>=40 else FAIL
+                    font=("Consolas", 9, "bold"), width=5).pack(side="left")
+            pct_c = DONE if pct >= 70 else STREAK if pct >= 40 else FAIL
             tk.Label(row, text=f"{pct}%" if logged_cnt else "—",
-                     bg=row_bg, fg=pct_c, font=("Consolas",9), width=5).pack(side="left")
-            tk.Label(row, text=f"🔥{cur_s}" if cur_s>=1 else "—",
-                     bg=row_bg, fg=STREAK, font=("Consolas",9), width=5).pack(side="left")
+                    bg=row_bg, fg=pct_c, font=("Consolas", 9), width=5).pack(side="left")
+            tk.Label(row, text=f"🔥{cur_s}" if cur_s >= 1 else "—",
+                    bg=row_bg, fg=STREAK, font=("Consolas", 9), width=5).pack(side="left")
 
-        # Legend
-        legend = tk.Frame(self._grid_inner, bg=BG, pady=6)
-        legend.pack(fill="x")
-        for txt, clr in [("✔ Виконано",DONE),("✖ Пропустив",FAIL),
-                          ("# Число",ACCENT3),("· Порожньо",TEXT_DIM)]:
+        # ── Легенда ────────────────────────────────────────────
+        legend = tk.Frame(table, bg=BG, pady=6)
+        legend.grid(row=len(habits) + 1, column=0, sticky="w")
+        for txt, clr in [("✔ Виконано", DONE), ("✖ Пропустив", FAIL),
+                        ("# Число", ACCENT3), ("· Порожньо", TEXT_DIM)]:
             tk.Label(legend, text=txt, bg=BG, fg=clr, font=FONT_MONO).pack(side="left", padx=12)
-
     def _cell_display(self, val, habit, is_future, is_today, base_bg):
         if is_future: return "·", BORDER, base_bg
         if val is None: return "·", TEXT_DIM, base_bg

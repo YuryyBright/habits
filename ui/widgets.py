@@ -1,52 +1,65 @@
-"""SelfMaster — Reusable Widgets"""
+"""SelfMaster — Reusable Widgets (v2.1 compact)"""
 import tkinter as tk
 from tkinter import ttk
 from ui.theme import *
 
 
 def scrollable_frame(parent, bg=None):
+    """Vertical scrollable frame with auto-hiding thin scrollbar."""
     bg = bg or BG
     outer = tk.Frame(parent, bg=bg)
     canvas = tk.Canvas(outer, bg=bg, highlightthickness=0, bd=0)
     sb = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
     inner = tk.Frame(canvas, bg=bg)
+
     inner.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
     canvas.create_window((0, 0), window=inner, anchor="nw")
     canvas.configure(yscrollcommand=sb.set)
-    sb.pack(side="right", fill="y")
+
+    # Авто-приховування скролбара
+    def _show_sb(*_):
+        sb.pack(side="right", fill="y")
+
+    def _hide_sb(*_):
+        sb.pack_forget()
+
     canvas.pack(side="left", fill="both", expand=True)
 
     def _scroll(event):
-        canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-    canvas.bind_all("<MouseWheel>", _scroll)
+        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+    canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _scroll))
+    canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
+
     return outer, inner
 
 
 def hscrollable_frame(parent, bg=None):
-    def _on_mousewheel(event):
-        canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+    """Horizontal + vertical scrollable frame."""
     bg = bg or BG
     outer = tk.Frame(parent, bg=bg)
     canvas = tk.Canvas(outer, bg=bg, highlightthickness=0, bd=0)
     hsb = ttk.Scrollbar(outer, orient="horizontal", command=canvas.xview)
     vsb = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
     inner = tk.Frame(canvas, bg=bg)
+
     inner.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
     canvas.create_window((0, 0), window=inner, anchor="nw")
     canvas.configure(xscrollcommand=hsb.set, yscrollcommand=vsb.set)
+
     vsb.pack(side="right", fill="y")
     hsb.pack(side="bottom", fill="x")
     canvas.pack(side="left", fill="both", expand=True)
 
-    def _scroll(event):
-        canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+    def _on_mousewheel(event):
+        canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
     canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _on_mousewheel))
     canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
     return outer, inner
 
 
-
-def card(parent, accent_color=None, padx=16, pady=12, **kwargs):
+def card(parent, accent_color=None, padx=14, pady=10, **kwargs):
     f = tk.Frame(parent, bg=SURFACE, padx=padx, pady=pady, **kwargs)
     if accent_color:
         tk.Frame(f, bg=accent_color, height=2).pack(fill="x")
@@ -55,11 +68,11 @@ def card(parent, accent_color=None, padx=16, pady=12, **kwargs):
 
 def section_header(parent, title, color=TEXT_DIM):
     hdr = tk.Frame(parent, bg=BG)
-    hdr.pack(fill="x", pady=(12, 4))
+    hdr.pack(fill="x", pady=(10, 3))
     tk.Label(hdr, text=title, bg=BG, fg=color,
-             font=("Consolas", 8, "bold")).pack(side="left")
+             font=("Consolas", 7, "bold")).pack(side="left", padx=(20, 0))
     tk.Frame(hdr, bg=BORDER, height=1).pack(
-        side="left", fill="x", expand=True, padx=(8, 0), pady=10)
+        side="left", fill="x", expand=True, padx=(8, 20), pady=8)
     return hdr
 
 
@@ -74,17 +87,18 @@ def labeled_entry(parent, label, var=None, width=30, bg=None, **kwargs):
                  width=width, bd=0,
                  highlightthickness=1, highlightcolor=ACCENT,
                  highlightbackground=BORDER, **kwargs)
-    e.pack(fill="x", ipady=7, pady=(3, 0))
+    e.pack(fill="x", ipady=6, pady=(2, 0))
     return f, var
 
 
 def pill_badge(parent, text, color=ACCENT, **kwargs):
     return tk.Label(parent, text=f" {text} ",
                     bg=_hex_fade(color, 0.15), fg=color,
-                    font=("Consolas", 8), relief="flat", **kwargs)
+                    font=("Consolas", 7), relief="flat", **kwargs)
+
 
 def _hex_fade(hex_color, alpha):
-    """Simulate transparent color by blending with SURFACE."""
+    """Blend color with SURFACE."""
     try:
         r = int(hex_color[1:3], 16)
         g = int(hex_color[3:5], 16)
@@ -92,11 +106,12 @@ def _hex_fade(hex_color, alpha):
         sr = int(SURFACE[1:3], 16)
         sg = int(SURFACE[3:5], 16)
         sb = int(SURFACE[5:7], 16)
-        nr = int(r*alpha + sr*(1-alpha))
-        ng = int(g*alpha + sg*(1-alpha))
-        nb = int(b*alpha + sb*(1-alpha))
+        nr = int(r * alpha + sr * (1 - alpha))
+        ng = int(g * alpha + sg * (1 - alpha))
+        nb = int(b * alpha + sb * (1 - alpha))
         return f"#{nr:02x}{ng:02x}{nb:02x}"
-    except: return SURFACE2
+    except:
+        return SURFACE2
 
 
 class MoodPicker(tk.Frame):
@@ -108,8 +123,8 @@ class MoodPicker(tk.Frame):
         for i in range(1, 6):
             em = MOOD_LABELS[i].split()[0]
             btn = tk.Label(self, text=em, bg=self['bg'],
-                           font=("Segoe UI", 15), cursor="hand2")
-            btn.pack(side="left", padx=3)
+                           font=("Segoe UI", 14), cursor="hand2")
+            btn.pack(side="left", padx=2)
             btn.bind("<Button-1>", lambda e, v=i: self._select(v))
             self._btns.append(btn)
         self._refresh()
@@ -136,11 +151,10 @@ class ScoreSlider(tk.Frame):
         self._cb = callback
         self._bg = bg
         self._btns = []
-        score_colors = ["", FAIL, STREAK, ACCENT3, ACCENT, SUCCESS]
         for i in range(6):
             txt = "●" if i == 0 else str(i)
             btn = tk.Label(self, text=txt, bg=bg,
-                           font=("Segoe UI", 12), cursor="hand2", width=2)
+                           font=("Segoe UI", 11), cursor="hand2", width=2)
             btn.pack(side="left", padx=1)
             btn.bind("<Button-1>", lambda e, v=i: self._select(v))
             self._btns.append(btn)
@@ -166,19 +180,18 @@ class ScoreSlider(tk.Frame):
 
 
 class GlowButton(tk.Canvas):
-    """Animated glow button."""
+    """Rounded button with hover effect."""
     def __init__(self, parent, text, command=None, color=ACCENT,
-                 fg=TEXT, width=130, height=38, **kwargs):
+                 fg=TEXT, width=130, height=36, **kwargs):
+        bg = parent['bg'] if 'bg' not in kwargs else kwargs.pop('bg')
         super().__init__(parent, width=width, height=height,
-                         bg=parent['bg'] if 'bg' not in kwargs else kwargs.pop('bg'),
-                         highlightthickness=0, **kwargs)
+                         bg=bg, highlightthickness=0, **kwargs)
         self._color = color
         self._fg = fg
         self._text = text
         self._cmd = command
         self._w = width
         self._h = height
-        self._hover = False
         self._draw()
         self.bind("<Button-1>", self._click)
         self.bind("<Enter>", self._enter)
@@ -187,13 +200,13 @@ class GlowButton(tk.Canvas):
     def _draw(self, hover=False):
         self.delete("all")
         c = self._color
-        r = 8
+        r = 6
         w, h = self._w, self._h
-        bg = _hex_fade(c, 0.25 if hover else 0.15)
+        bg = _hex_fade(c, 0.25 if hover else 0.12)
         pts = [r,0, w-r,0, w,r, w,h-r, w-r,h, r,h, 0,h-r, 0,r]
         self.create_polygon(pts, fill=bg, outline=c if hover else BORDER, width=1, smooth=True)
-        self.create_text(w//2, h//2, text=self._text, fill=self._fg if hover else TEXT_MID,
-                         font=FONT_BOLD)
+        self.create_text(w//2, h//2, text=self._text,
+                         fill=self._fg if hover else TEXT_MID, font=FONT_BOLD)
 
     def _click(self, e):
         if self._cmd: self._cmd()
@@ -204,12 +217,11 @@ class GlowButton(tk.Canvas):
 
 class ProgressBar(tk.Frame):
     def __init__(self, parent, value=0, max_val=100, color=ACCENT,
-                 height=6, show_text=False, **kwargs):
+                 height=4, show_text=False, **kwargs):
         bg = kwargs.pop('bg', SURFACE)
         super().__init__(parent, bg=bg, **kwargs)
         self._color = color
         self._height = height
-        self._show_text = show_text
         self._bar_bg = tk.Frame(self, bg=SURFACE3, height=height)
         self._bar_bg.pack(fill="x")
         self._bar_fill = tk.Frame(self._bar_bg, bg=color, height=height)
@@ -217,5 +229,5 @@ class ProgressBar(tk.Frame):
         self.set(value, max_val)
 
     def set(self, value, max_val=100):
-        pct = max(0, min(1, value/max_val)) if max_val else 0
+        pct = max(0, min(1, value / max_val)) if max_val else 0
         self._bar_fill.place(relwidth=pct, relheight=1)
